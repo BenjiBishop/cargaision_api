@@ -1,0 +1,31 @@
+# .gitignore
+
+# Variables d'environnement
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+
+# Volumes Docker
+mysql_volume/
+
+# Base de données
+backups/*.sql
+backups/*.sql.gz
+!src/Database/migrations.sql
+
+# Cache et fichiers temporaires
+.cache/
+tmp/
+*.tmp
+
+# Système
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

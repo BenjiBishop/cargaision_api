@@ -1,0 +1,67 @@
+# docker-compose.yml - Configuration finale
+version: '3.8'
+
+services:
+  back:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '${APP_PORT:-80}:80'
+    volumes:
+      - '.:/var/www/html'
+    networks:
+      - cargo-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mysql
+      - DB_NAME=cargo_db
+      - DB_USER=cargo_user
+      - DB_PASSWORD=passer
+    restart: unless-stopped
+
+  mysql:
+    image: 'mysql/mysql-server:8.0'
+    ports:
+      - '${FORWARD_DB_PORT:-3306}:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: 'passer'
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: 'cargo_db'
+      MYSQL_USER: 'cargo_user'
+      MYSQL_PASSWORD: 'passer'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 0
+    networks:
+      - cargo-network
+    volumes:
+      - 'mysql_volume:/var/lib/mysql'
+      - './src/Database/migrations.sql:/docker-entrypoint-initdb.d/migrations.sql'
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "cargo_user", "-ppasser"]
+      timeout: 20s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    ports:
+      - '${PMA_PORT:-8080}:80'
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=cargo_user
+      - PMA_PASSWORD=passer
+    networks:
+      - cargo-network
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+networks:
+  cargo-network:
+    driver: bridge
+
+volumes:
+  mysql_volume:
+    driver: local
